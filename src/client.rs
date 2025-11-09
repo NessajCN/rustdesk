@@ -93,6 +93,8 @@ pub mod file_trait;
 pub mod helper;
 pub mod io_loop;
 pub mod screenshot;
+pub mod usbipd;
+pub mod usbip_protocol;
 
 pub const MILLI1: Duration = Duration::from_millis(1);
 pub const SEC30: Duration = Duration::from_secs(30);

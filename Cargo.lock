@@ -2028,7 +2028,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading 0.7.4",
+ "libloading 0.8.4",
 ]
 
 [[package]]
@@ -4133,6 +4133,18 @@ dependencies = [
  "libc",
  "pkg-config",
  "walkdir",
+]
+
+[[package]]
+name = "libusb1-sys"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da050ade7ac4ff1ba5379af847a10a10a8e284181e060105bf8d86960ce9ce0f"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+ "vcpkg",
 ]
 
 [[package]]
@@ -6517,6 +6529,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusb"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab9f9ff05b63a786553a4c02943b74b34a988448671001e9a27e2f0565cc05a4"
+dependencies = [
+ "libc",
+ "libusb1-sys",
+]
+
+[[package]]
 name = "rust-ini"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6616,6 +6638,8 @@ dependencies = [
  "mac_address",
  "magnum-opus",
  "nix 0.29.0",
+ "num-derive 0.4.2",
+ "num-traits 0.2.19",
  "num_cpus",
  "objc",
  "objc_id",
@@ -6637,6 +6661,7 @@ dependencies = [
  "rpassword 7.3.1",
  "rubato",
  "runas",
+ "rusb",
  "rust-pulsectl",
  "samplerate",
  "sciter-rs",
@@ -6848,7 +6873,7 @@ dependencies = [
 [[package]]
 name = "sciter-rs"
 version = "0.5.57"
-source = "git+https://github.com/rustdesk-org/rust-sciter?branch=dyn#5322f3a755a0e6bf999fbc60d1efc35246c0f821"
+source = "git+https://github.com/NessajCN/rust-sciter?branch=dyn#5d12f658cabb9d5a6c54ab09d990e4ce8633d0ec"
 dependencies = [
  "lazy_static",
  "libc",

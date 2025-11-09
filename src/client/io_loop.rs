@@ -4,8 +4,9 @@ use crate::clipboard::{update_clipboard, ClipboardSide};
 use crate::{audio_service, clipboard::CLIPBOARD_INTERVAL, ConnInner, CLIENT_SERVER};
 use crate::{
     client::{
-        self, new_voice_call_request, Client, Data, Interface, MediaData, MediaSender,
-        QualityStatus, MILLI1, SEC30,
+        self, new_voice_call_request,
+        usbipd::{read_usbip_command_from_bytes, UsbIpServer},
+        Client, Data, Interface, MediaData, MediaSender, QualityStatus, MILLI1, SEC30,
     },
     common::get_default_sound_input,
     ui_session_interface::{InvokeUiSession, Session},
@@ -49,7 +50,7 @@ use std::{
     path::PathBuf,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc, RwLock,
+        Arc, Mutex, RwLock,
     },
 };
 
@@ -78,6 +79,8 @@ pub struct Remote<T: InvokeUiSession> {
     chroma: Arc<RwLock<Option<Chroma>>>,
     last_record_state: bool,
     sent_close_reason: bool,
+    usbip_server: Arc<UsbIpServer>,
+    current_import_device_id: Arc<Mutex<Option<String>>>,
 }
 
 #[derive(Default)]
@@ -127,6 +130,8 @@ impl<T: InvokeUiSession> Remote<T> {
             chroma: Default::default(),
             last_record_state: false,
             sent_close_reason: false,
+            usbip_server: Arc::new(UsbIpServer::new_from_host()),
+            current_import_device_id: Default::default(),
         }
     }
 
@@ -2005,6 +2010,13 @@ impl<T: InvokeUiSession> Remote<T> {
                         }
                     }
                     self.handler.handle_terminal_response(response);
+                }
+                Some(message::Union::UsbIpCommand(usbipcmd)) => {
+                    let command = read_usbip_command_from_bytes(usbipcmd.raw_command).await;
+                    let _res = self
+                        .usbip_server
+                        .handler(command, self.current_import_device_id.clone(), peer)
+                        .await;
                 }
                 _ => {}
             }
