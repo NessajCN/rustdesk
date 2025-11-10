@@ -367,6 +367,7 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       toolbarItems.add(_VoiceCallMenu(id: widget.id, ffi: widget.ffi));
     }
     if (!isWeb) toolbarItems.add(_RecordMenu());
+    if (!isWeb) toolbarItems.add(_UsbRedirMenu(id: widget.id, ffi: widget.ffi, state: widget.state));
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
     final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
     return Column(
@@ -2151,6 +2152,37 @@ class _RecordMenu extends StatelessWidget {
     );
   }
 }
+
+class _UsbRedirMenu extends StatelessWidget {
+  final String id;
+  final FFI ffi;
+  final ToolbarState state;
+  _UsbRedirMenu(
+      {Key? key, required this.id, required this.ffi, required this.state})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return _IconSubmenuButton(
+        tooltip: 'USB redirection',
+        svg: "assets/usb.svg",
+        color: _ToolbarTheme.blueColor,
+        hoverColor: _ToolbarTheme.hoverBlueColor,
+        ffi: ffi,
+        menuChildrenGetter: (_) => toolbarControls(context, id, ffi).map((e) {
+              if (e.divider) {
+                return Divider();
+              } else {
+                return MenuButton(
+                    child: e.child,
+                    onPressed: e.onPressed,
+                    ffi: ffi,
+                    trailingIcon: e.trailingIcon);
+              }
+            }).toList());
+  }
+}
+
 
 class _CloseMenu extends StatelessWidget {
   final String id;
