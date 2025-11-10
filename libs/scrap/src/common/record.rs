@@ -272,7 +272,7 @@ impl Recorder {
 
 struct WebmRecorder {
     vt: VideoTrack,
-    webm: Option<Segment<Writer<File>>>,
+    webm: Option<Segment<File>>,
     ctx: RecorderContext,
     ctx2: RecorderContext2,
     key: bool,
@@ -292,14 +292,14 @@ impl RecorderApi for WebmRecorder {
             Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => File::create(&ctx2.filename)?,
             Err(e) => return Err(e.into()),
         };
-        let mut webm = match mux::Segment::new(mux::Writer::new(out)) {
-            Some(v) => v,
-            None => bail!("Failed to create webm mux"),
+        let builder = match mux::SegmentBuilder::new(mux::Writer::new(out)) {
+            Ok(b) => b,
+            Err(e) => bail!("Failed to create webm mux"),
         };
-        let vt = webm.add_video_track(
+
+        let (builder, vt) = match builder.add_video_track(
             ctx2.width as _,
             ctx2.height as _,
-            None,
             if ctx2.format == CodecFormat::VP9 {
                 mux::VideoCodecId::VP9
             } else if ctx2.format == CodecFormat::VP8 {
@@ -307,23 +307,41 @@ impl RecorderApi for WebmRecorder {
             } else {
                 mux::VideoCodecId::AV1
             },
-        );
+            None,
+        ) {
+            Ok((builder, vt)) => (builder, vt),
+            Err(_) => bail!("Failed to add video track"),
+        };
+
         if ctx2.format == CodecFormat::AV1 {
             // [129, 8, 12, 0] in 3.6.0, but zero works
             let codec_private = vec![0, 0, 0, 0];
-            if !webm.set_codec_private(vt.track_number(), &codec_private) {
-                bail!("Failed to set codec private");
-            }
+            let builder = match builder.set_codec_private(vt.track_number(), &codec_private) {
+                Ok(b) => b,
+                Err(_) => bail!("Failed to set codec private"),
+            };
+            let webm = builder.build();
+            Ok(WebmRecorder {
+                vt,
+                webm: Some(webm),
+                ctx,
+                ctx2,
+                key: false,
+                written: false,
+                start: Instant::now(),
+            })
+        } else {
+            let webm = builder.build();
+            Ok(WebmRecorder {
+                vt,
+                webm: Some(webm),
+                ctx,
+                ctx2,
+                key: false,
+                written: false,
+                start: Instant::now(),
+            })
         }
-        Ok(WebmRecorder {
-            vt,
-            webm: Some(webm),
-            ctx,
-            ctx2,
-            key: false,
-            written: false,
-            start: Instant::now(),
-        })
     }
 
     fn write_video(&mut self, frame: &EncodedVideoFrame) -> bool {
@@ -331,9 +349,25 @@ impl RecorderApi for WebmRecorder {
             self.key = true;
         }
         if self.key {
-            let ok = self
-                .vt
-                .add_frame(&frame.data, frame.pts as u64 * 1_000_000, frame.key);
+            let ok = match self.webm.take() {
+                Some(mut w) => match w.add_frame(
+                    self.vt.track_number(),
+                    &frame.data,
+                    frame.pts as u64 * 1_000_000,
+                    frame.key,
+                ) {
+                    Ok(_) => {
+                        self.webm = Some(w);
+                        true
+                    }
+                    Err(_) => {
+                        self.webm = Some(w);
+                        false
+                    }
+                },
+                None => false,
+            };
+
             if ok {
                 self.written = true;
             }
@@ -346,7 +380,8 @@ impl RecorderApi for WebmRecorder {
 
 impl Drop for WebmRecorder {
     fn drop(&mut self) {
-        let _ = std::mem::replace(&mut self.webm, None).map_or(false, |webm| webm.finalize(None));
+        let _ = std::mem::replace(&mut self.webm, None)
+            .map_or(false, |webm| webm.finalize(None).is_ok());
         let mut state = RecordState::WriteTail;
         if !self.written || self.start.elapsed().as_secs() < MIN_SECS {
             std::fs::remove_file(&self.ctx2.filename).ok();
