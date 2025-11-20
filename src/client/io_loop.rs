@@ -130,7 +130,7 @@ impl<T: InvokeUiSession> Remote<T> {
             chroma: Default::default(),
             last_record_state: false,
             sent_close_reason: false,
-            usbip_server: Arc::new(UsbIpServer::new_from_host()),
+            usbip_server: Arc::new(UsbIpServer::new_simulated(Vec::new())),
             current_import_device_id: Default::default(),
         }
     }
