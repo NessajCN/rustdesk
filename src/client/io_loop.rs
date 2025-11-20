@@ -4,9 +4,8 @@ use crate::clipboard::{update_clipboard, ClipboardSide};
 use crate::{audio_service, clipboard::CLIPBOARD_INTERVAL, ConnInner, CLIENT_SERVER};
 use crate::{
     client::{
-        self, new_voice_call_request,
-        usbipd::{read_usbip_command_from_bytes, UsbIpServer},
-        Client, Data, Interface, MediaData, MediaSender, QualityStatus, MILLI1, SEC30,
+        self, new_voice_call_request, usbipd::read_usbip_command_from_bytes, Client, Data,
+        Interface, MediaData, MediaSender, QualityStatus, MILLI1, SEC30,
     },
     common::get_default_sound_input,
     ui_session_interface::{InvokeUiSession, Session},
@@ -42,6 +41,7 @@ use hbb_common::{
 };
 #[cfg(any(target_os = "windows", feature = "unix-file-copy-paste"))]
 use hbb_common::{tokio::sync::Mutex as TokioMutex, ResultType};
+use nusbip::UsbIpServer;
 use scrap::CodecFormat;
 use std::{
     collections::HashMap,
@@ -2011,6 +2011,7 @@ impl<T: InvokeUiSession> Remote<T> {
                     }
                     self.handler.handle_terminal_response(response);
                 }
+                // usbip server
                 Some(message::Union::UsbIpCommand(usbipcmd)) => {
                     let command = read_usbip_command_from_bytes(usbipcmd.raw_command).await;
                     let _res = self
