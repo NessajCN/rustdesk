@@ -84,7 +84,9 @@ totp-rs = { version = "5.4", default-features = false, features = ["gen_secret",
 stunclient = "0.4"
 kcp-sys= { git = "https://github.com/rustdesk-org/kcp-sys"}
 reqwest = { version = "0.12", features = ["blocking", "socks", "json", "native-tls", "rustls-tls", "rustls-tls-native-roots", "gzip"], default-features=false }
-rusb = "0.9.3"
+# rusb = "0.9.3"
+nusb = {version = "0.2", features=["tokio"]}
+nusbip = "0.7"
 num-traits = "0.2.15"
 num-derive = "0.4.2"
 
